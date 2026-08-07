@@ -1,0 +1,9 @@
+# Redirects from the old WordPress site's real (non-template-demo) URLs to their
+# equivalents on the new site. Netlify/Cloudflare Pages redirect syntax: old, new, code.
+/privacy-policy/           /privacy.html   301
+/terms-and-conditions/     /terms.html     301
+
+# The old site's /blog/ and /portfolio/item/* URLs were unfinished theme demo content
+# (generic filler posts, placeholder portfolio items like "Mozar"/"Gooir"/"Zorro"), not
+# real content, so they are not redirected individually. If any of those specific URLs
+# turn out to have real inbound backlinks, add a targeted redirect for that one path here.
