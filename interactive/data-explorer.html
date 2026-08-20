@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Single-Sided Trap — Data Explorer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --navy-900:#271821; --navy-700:#4d4148; --navy-500:#70666c;
+    --teal-700:#0d6a63; --teal-600:#12857a; --teal-100:#dcece9; --teal-50:#f2f8f7;
+    --gold-600:#702d3c; --gold-500:#a14156;
+    --terra-600:#8a5049; --terra-500:#a37269; --terra-100:#f6ede9;
+    --cream:#faf6f2; --line:#e7ded7;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--cream); color:var(--navy-900);
+    font-family:'Inter',-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:900px; margin:0 auto; padding:32px 20px 80px;}
+  header{border-bottom:2px solid var(--navy-900); padding-bottom:20px; margin-bottom:28px;}
+  .eyebrow{
+    font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--terra-600); display:flex; align-items:center; gap:8px; margin-bottom:10px;
+  }
+  .eyebrow::before{content:''; width:24px; height:2px; background:var(--terra-500); display:inline-block;}
+  h1{
+    font-family:'Source Serif 4',Georgia,serif; font-weight:700; font-size:clamp(28px,5vw,42px);
+    margin:0 0 10px; line-height:1.1;
+  }
+  .lede{color:var(--navy-500); font-size:16px; max-width:640px; line-height:1.5; margin:0;}
+  .backlink{font-size:13px; margin-top:14px;}
+  .backlink a{color:var(--teal-700); text-decoration:none; font-weight:600;}
+  .backlink a:hover{text-decoration:underline;}
+
+  .tabs{display:flex; gap:6px; margin-bottom:24px; flex-wrap:wrap;}
+  .tab{
+    font-family:'Inter'; font-weight:600; font-size:14px; padding:10px 16px;
+    border:1px solid var(--line); background:#fff; color:var(--navy-700);
+    border-radius:8px; cursor:pointer; transition:all .15s ease;
+  }
+  .tab:hover{border-color:var(--teal-600); color:var(--teal-700);}
+  .tab.active{background:var(--navy-900); border-color:var(--navy-900); color:#fff;}
+
+  .panel{display:none; background:#fff; border:1px solid var(--line); border-radius:14px; padding:28px; animation:fade .3s ease;}
+  .panel.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);}}
+  .panel h2{font-family:'Source Serif 4',serif; font-size:22px; margin:0 0 8px;}
+  .panel .desc{color:var(--navy-500); font-size:14.5px; line-height:1.5; margin:0 0 24px; max-width:600px;}
+
+  .stat-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:8px;}
+  .stat-card{background:var(--teal-50); border:1px solid var(--teal-100); border-radius:10px; padding:16px;}
+  .stat-card .label{font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--teal-700); margin-bottom:6px;}
+  .stat-card .num{font-family:'Source Serif 4',serif; font-size:26px; font-weight:700; color:var(--navy-900);}
+  .stat-card .sub{font-size:12.5px; color:var(--navy-500); margin-top:4px;}
+
+  .collapse-track{position:relative; height:64px; margin:20px 0 8px;}
+  .collapse-line{position:absolute; top:30px; left:0; right:0; height:3px; background:var(--line); border-radius:2px;}
+  .collapse-fill{position:absolute; top:30px; left:0; height:3px; background:linear-gradient(90deg,var(--teal-700),var(--gold-500)); border-radius:2px; width:0%; transition:width 1s cubic-bezier(.4,0,.2,1);}
+  .collapse-point{
+    position:absolute; top:22px; width:18px; height:18px; border-radius:50%;
+    background:#fff; border:3px solid var(--navy-900); transform:translateX(-50%);
+    cursor:pointer;
+  }
+  .collapse-point .tip{
+    position:absolute; bottom:26px; left:50%; transform:translateX(-50%);
+    background:var(--navy-900); color:#fff; font-size:12px; font-weight:600;
+    padding:6px 10px; border-radius:6px; white-space:nowrap; opacity:0; pointer-events:none; transition:opacity .15s;
+  }
+  .collapse-point:hover .tip{opacity:1;}
+  .collapse-labels{display:flex; justify-content:space-between; font-size:12px; color:var(--navy-500); margin-top:4px;}
+
+  .bars{display:flex; flex-direction:column; gap:12px; margin-top:6px;}
+  .bar-row{cursor:default;}
+  .bar-label-row{display:flex; justify-content:space-between; font-size:13.5px; font-weight:600; margin-bottom:5px;}
+  .bar-track{height:20px; background:var(--terra-100); border-radius:5px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:5px; width:0%; transition:width 1s cubic-bezier(.4,0,.2,1); position:relative;}
+  .bar-fill.hi{background:var(--teal-700);}
+  .bar-fill.lo{background:var(--terra-500);}
+  .bar-ghs{font-size:12px; color:var(--navy-500); margin-top:3px;}
+
+  .toggle{display:inline-flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-bottom:20px;}
+  .toggle button{
+    font-family:'Inter'; font-weight:600; font-size:12.5px; padding:7px 14px; border:none;
+    background:#fff; color:var(--navy-500); cursor:pointer;
+  }
+  .toggle button.active{background:var(--teal-700); color:#fff;}
+
+  .callout{
+    border-left:3px solid var(--gold-500); background:var(--terra-100); border-radius:0 8px 8px 0;
+    padding:12px 16px; font-size:13.5px; color:var(--navy-700); line-height:1.5; margin-top:18px;
+  }
+  footer{margin-top:36px; font-size:12px; color:var(--navy-500); line-height:1.6; border-top:1px solid var(--line); padding-top:16px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Ghana Mobile Money, 2024&ndash;2025 · Data Companion</div>
+    <h1>The Single-Sided Trap, explored</h1>
+    <p class="lede">Every figure in the essay, in one place you can click through rather than read past. Built from the Bank of Ghana's own published reporting.</p>
+    <p class="backlink">&larr; <a href="https://derrydean.substack.com/p/the-single-sided-trap-why-cant-the" target="_blank" rel="noopener">Back to the full essay on The Sovereign Architect</a></p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="scale">The Scale</button>
+    <button class="tab" data-tab="collapse">The Collapse</button>
+    <button class="tab" data-tab="moves">Where Value Moves</button>
+  </div>
+
+  <div class="panel active" id="panel-scale">
+    <h2>Registered scale vs. active use</h2>
+    <p class="desc">Ghana's mobile money footprint is enormous by registration count. Reported dormancy suggests the base of people actually transacting is far smaller than the headline number implies.</p>
+    <div class="stat-row">
+      <div class="stat-card"><div class="label">Transaction value, 2024</div><div class="num">GHS 3.01tn</div><div class="sub">up 56.8% on 2023</div></div>
+      <div class="stat-card"><div class="label">Registered accounts, Feb 2025</div><div class="num">74.1M</div><div class="sub">vs. ~34M population</div></div>
+      <div class="stat-card"><div class="label">Reported dormant</div><div class="num">~50M</div><div class="sub">active base ~1 in 3</div></div>
+    </div>
+    <div class="bars" style="margin-top:20px;">
+      <div class="bar-row">
+        <div class="bar-label-row"><span>Active</span><span id="active-pct">32%</span></div>
+        <div class="bar-track"><div class="bar-fill hi" id="bar-active" style="width:0%"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="bar-label-row"><span>Dormant</span><span id="dormant-pct">68%</span></div>
+        <div class="bar-track"><div class="bar-fill lo" id="bar-dormant" style="width:0%"></div></div>
+      </div>
+    </div>
+    <div class="callout">Ghana's own reporting does not publish a clean, continuous active/registered series across years, so this is a single recent snapshot, not a trend line. That gap in the data is itself part of the essay's argument.</div>
+  </div>
+
+  <div class="panel" id="panel-collapse">
+    <h2>The merchant payment collapse</h2>
+    <p class="desc">Person-to-business transfers, the category closest to "paying a merchant," as a share of total mobile money transaction value. Hover each point for the underlying cedi figure.</p>
+    <div class="collapse-track">
+      <div class="collapse-line"></div>
+      <div class="collapse-fill" id="collapse-fill" style="width:0%"></div>
+      <div class="collapse-point" style="left:0%;"><div class="tip">2021 &middot; GHS 124.4bn</div></div>
+      <div class="collapse-point" style="left:50%;"><div class="tip">2022 &middot; GHS 45.8bn</div></div>
+      <div class="collapse-point" style="left:100%;"><div class="tip">2024 &middot; ~GHS 0</div></div>
+    </div>
+    <div class="collapse-labels"><span>2021 &middot; 13%</span><span>2022 &middot; 4%</span><span>2024 &middot; ~0%</span></div>
+    <div class="callout">Not a gap in the record. The Bank of Ghana's Payment Systems Oversight Annual Report tracked this category by name in 2021 and 2022; its separate FinTech Sector Report kept naming it through 2024, where it had fallen to a rounding error. The collapse happened in full public view.</div>
+  </div>
+
+  <div class="panel" id="panel-moves">
+    <h2>Where mobile money value actually moves, 2024</h2>
+    <p class="desc">Share of total transaction value by category. Toggle to see the underlying cedi value at GHS 3.01 trillion total.</p>
+    <div class="toggle">
+      <button class="active" data-view="pct">Share of value</button>
+      <button data-view="ghs">Cedi value</button>
+    </div>
+    <div class="bars" id="moves-bars"></div>
+    <div class="callout">Remaining ~9% of value (Others, B2B, and P2B at roughly 0%) not separately charted. Person-to-business, once 13% of this chart, is now a rounding error.</div>
+  </div>
+
+  <footer>
+    Sources: Bank of Ghana FinTech Sector Report 2024 (Full Year); Bank of Ghana Payment Systems Oversight Annual Report 2022; Graphic Online / Bank of Ghana data, Feb 2025; ModernGhana / The High Street Journal, reporting on Bank of Ghana dormancy figures.<br>
+    An interactive companion to <a href="https://derrydean.substack.com/p/the-single-sided-trap-why-cant-the" target="_blank" rel="noopener" style="color:var(--teal-700);">The Single-Sided Trap</a> by Derrydean Dadzie, The Sovereign Architect.
+  </footer>
+</div>
+
+<script>
+  const tabs = document.querySelectorAll('.tab');
+  const panels = document.querySelectorAll('.panel');
+  function activateTab(name){
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+    panels.forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+    if(name === 'scale') animateScale();
+    if(name === 'collapse') animateCollapse();
+    if(name === 'moves') renderMoves('pct');
+  }
+  tabs.forEach(t => t.addEventListener('click', () => activateTab(t.dataset.tab)));
+
+  function animateScale(){
+    requestAnimationFrame(() => {
+      document.getElementById('bar-active').style.width = '32%';
+      document.getElementById('bar-dormant').style.width = '68%';
+    });
+  }
+  function animateCollapse(){
+    requestAnimationFrame(() => {
+      document.getElementById('collapse-fill').style.width = '100%';
+    });
+  }
+
+  const MOVES = [
+    {label:'Agent-to-agent', tag:'Float movement', pct:39, ghs:'GHS 1.17tn', cls:'hi'},
+    {label:'Third-party transfers', pct:14, ghs:'GHS 421bn', cls:'lo'},
+    {label:'Cash-out', pct:10, ghs:'GHS 301bn', cls:'lo'},
+    {label:'Cash-in', pct:10, ghs:'GHS 301bn', cls:'lo'},
+    {label:'Bank-to-wallet', pct:7, ghs:'GHS 211bn', cls:'lo'},
+    {label:'Wallet-to-bank', pct:6, ghs:'GHS 181bn', cls:'lo'},
+    {label:'Person-to-person', pct:5, ghs:'GHS 151bn', cls:'lo'},
+  ];
+  function renderMoves(view){
+    const container = document.getElementById('moves-bars');
+    container.innerHTML = MOVES.map(m => `
+      <div class="bar-row">
+        <div class="bar-label-row"><span>${m.label}${m.tag ? ' &middot; <span style="font-weight:400;color:var(--navy-500);font-size:12px;">'+m.tag+'</span>' : ''}</span><span>${view === 'pct' ? m.pct + '%' : m.ghs}</span></div>
+        <div class="bar-track"><div class="bar-fill ${m.cls}" data-pct="${m.pct}" style="width:0%"></div></div>
+      </div>
+    `).join('');
+    requestAnimationFrame(() => {
+      container.querySelectorAll('.bar-fill').forEach(el => {
+        el.style.width = (el.dataset.pct / 39 * 100) + '%';
+      });
+    });
+  }
+  document.querySelectorAll('.toggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.toggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderMoves(btn.dataset.view);
+    });
+  });
+
+  animateScale();
+</script>
+</body>
+</html>
